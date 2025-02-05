@@ -1,2 +1,0 @@
-# HRC
-AI+Flink 
