@@ -254,6 +254,11 @@
             </exclusions>
         </dependency>
         <!-- log4j日志 end-->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>2.13.0</version> <!-- 可以根据需要选择合适的版本 -->
+        </dependency>
 
         <!-- mysql 连接驱动 -->
         <dependency>

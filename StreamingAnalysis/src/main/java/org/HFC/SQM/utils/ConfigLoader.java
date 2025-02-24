@@ -8,6 +8,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
 
+
+
 /**
  * Author itcast
  * Date 2021/8/9 10:29
@@ -20,7 +22,6 @@ import java.util.Properties;
  */
 public class ConfigLoader {
     //定义输出 logger 用于打印日志到控制台或者文件
-    private static Logger logger = LoggerFactory.getLogger(ConfigLoader.class);
 
     //1. 读取 resources / conf.properties
     private final static InputStream inputStream = ConfigLoader.class
@@ -34,7 +35,7 @@ public class ConfigLoader {
         try {
             props.load(inputStream);
         } catch (IOException e) {
-            logger.error("当前 ConfigLoad:static 出现异常: " + e.getMessage());
+            System.out.println("当前 ConfigLoad:static 出现异常: " + e.getMessage());
         }
     }
     //3. 创建获取字符串方法 根据输入key
