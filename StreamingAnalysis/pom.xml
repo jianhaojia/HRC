@@ -125,12 +125,14 @@
             <groupId>org.apache.flink</groupId>
             <artifactId>flink-clients</artifactId>
             <version>${flink.version}</version>
+
         </dependency>
 
         <dependency>
             <groupId>org.apache.flink</groupId>
             <artifactId>flink-runtime-web</artifactId>
             <version>${flink.version}</version>
+
         </dependency>
 
 
@@ -138,46 +140,42 @@
             <groupId>org.apache.flink</groupId>
             <artifactId>flink-connector-files</artifactId>
             <version>${flink.version}</version>
+
         </dependency>
 
         <dependency>
             <groupId>org.apache.flink</groupId>
             <artifactId>flink-connector-kafka</artifactId>
             <version>${flink.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.apache.flink</groupId>
-                    <artifactId>flink-json</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
 
         <dependency>
             <groupId>org.apache.flink</groupId>
-            <artifactId>flink-json</artifactId>
+            <artifactId>flink-connector-datagen</artifactId>
             <version>${flink.version}</version>
         </dependency>
 
 
+
         <!--目前中央仓库还没有 jdbc的连接器，暂时用一个快照版本-->
-<!--        <dependency>-->
-<!--            <groupId>org.apache.flink</groupId>-->
-<!--            <artifactId>flink-connector-jdbc</artifactId>-->
-<!--            <version>${flink.version}</version>-->
-<!--        </dependency>-->
+        <dependency>
+            <groupId>org.apache.flink</groupId>
+            <artifactId>flink-connector-jdbc</artifactId>
+            <version>1.17-SNAPSHOT</version>
+        </dependency>
 
         <dependency>
             <groupId>org.apache.flink</groupId>
             <artifactId>flink-statebackend-rocksdb</artifactId>
             <version>${flink.version}</version>
-            <scope>provided</scope>
+
         </dependency>
 
         <dependency>
             <groupId>org.apache.hadoop</groupId>
             <artifactId>hadoop-client</artifactId>
             <version>3.3.4</version>
-            <scope>provided</scope>
+
         </dependency>
 
         <dependency>
@@ -196,34 +194,38 @@
 
         <dependency>
             <groupId>org.apache.flink</groupId>
-            <artifactId>flink-java</artifactId>
-            <version>1.17.0</version>
+            <artifactId>flink-table-api-java-bridge</artifactId>
+            <version>${flink.version}</version>
         </dependency>
-        <!-- Flink Streaming 依赖 -->
-<!--        <dependency>-->
-<!--            <groupId>org.apache.flink</groupId>-->
-<!--            <artifactId>flink-streaming-java</artifactId>-->
-<!--            <version>1.17.0</version>-->
-<!--        </dependency>-->
-        <!-- Flink Table API 依赖 -->
         <dependency>
             <groupId>org.apache.flink</groupId>
-            <artifactId>flink-table-api-java-bridge</artifactId>
-            <version>1.17.0</version>
+            <artifactId>flink-table-planner-loader</artifactId>
+            <version>${flink.version}</version>
         </dependency>
-        <!-- Flink Table Planner 依赖 -->
-<!--        <dependency>-->
-<!--            <groupId>org.apache.flink</groupId>-->
-<!--            <artifactId>flink-table-planner_2.12</artifactId>-->
-<!--            <version>1.17.0</version>-->
-<!--        </dependency>-->
+
+        <dependency>
+            <groupId>org.apache.flink</groupId>
+            <artifactId>flink-table-runtime</artifactId>
+            <version>${flink.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.flink</groupId>
+            <artifactId>flink-json</artifactId>
+            <version>${flink.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.flink</groupId>
+            <artifactId>flink-connector-files</artifactId>
+            <version>${flink.version}</version>
+        </dependency>
+
 
         <!-- flink 开发环境 end -->
         <!-- kafka开发环境客户端 -->
         <dependency>
             <groupId>org.apache.kafka</groupId>
             <artifactId>kafka-clients</artifactId>
-            <version>${kafka.version}</version>
+            <version>3.7.2</version>
         </dependency>
         <!-- lombok -->
         <dependency>
@@ -329,10 +331,9 @@
     </dependencies>
 
     <build>
-        <!-- 默认加载此目录，作为source目录-->
         <sourceDirectory>src/main/java</sourceDirectory>
         <plugins>
-            <!-- java编译插件 -->
+            <!-- Java 编译插件 -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -343,7 +344,7 @@
                     <encoding>${encoding.version}</encoding>
                 </configuration>
             </plugin>
-            <!-- scala编译插件 -->
+            <!-- Scala 编译插件 -->
             <plugin>
                 <groupId>net.alchim31.maven</groupId>
                 <artifactId>scala-maven-plugin</artifactId>
@@ -351,7 +352,7 @@
                 <executions>
                     <execution>
                         <id>compile-scala</id>
-                        <phase>compile</phase>
+                        <phase>process-resources</phase>
                         <goals>
                             <goal>add-source</goal>
                             <goal>compile</goal>
@@ -359,7 +360,7 @@
                     </execution>
                 </executions>
             </plugin>
-            <!-- 打jar包插件(会包含所有依赖) -->
+            <!-- 打包插件 -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-assembly-plugin</artifactId>
@@ -370,7 +371,6 @@
                     </descriptorRefs>
                     <archive>
                         <manifest>
-                            <!-- 可以设置jar包的入口类(可选) -->
                             <mainClass>org.HFC.SQM.task.KafkaSourceDataTask</mainClass>
                         </manifest>
                     </archive>
@@ -387,5 +387,12 @@
             </plugin>
         </plugins>
     </build>
-
+    <repositories>
+        <repository>
+            <id>apache-snapshots</id>
+            <name>apache snapshots</name>
+            <url>https://repository.apache.org/content/repositories/snapshots/</url>
+            <!--<url>https://maven.aliyun.com/repository/apache-snapshots</url>-->
+        </repository>
+    </repositories>
 </project>
