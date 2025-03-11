@@ -50,23 +50,23 @@ public class KafkaDataConsumerTableAPI {
         );
 
         // 开窗计算 output 的 SUM，窗口范围为从最早的行到当前行
-//        Table windowedTable = tableEnv.sqlQuery(
-//                "SELECT                                              \n" +
-//                        "  id,                                               \n" +
-//                        "  event_time,                                       \n" +
-//                        "  output,                                           \n" +
-//                        "  status,                                           \n" +
-//                        "  uptime,                                           \n" +
-//                        "  SUM(output) OVER (                                \n" +  // 开窗计算 SUM
-//                        "    PARTITION BY id                                 \n" +  // 按 id 分区
-//                        "    ORDER BY event_time                             \n" +  // 按 event_time 排序
-//                        "    RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW \n" +  // 窗口范围为从最早的行到当前行
-//                        "  ) AS window_sum                                  \n" +  // 窗口 SUM 值
-//                        "FROM " + parsedTable + "                            \n"  // 使用上一个查询的结果
-//        );
+        Table windowedTable = tableEnv.sqlQuery(
+                "SELECT                                              \n" +
+                        "  id,                                               \n" +
+                        "  event_time,                                       \n" +
+                        "  output,                                           \n" +
+                        "  status,                                           \n" +
+                        "  uptime,                                           \n" +
+                        "  SUM(output) OVER (                                \n" +
+                        "    PARTITION BY id                                 \n" +
+                        "    ORDER BY event_time                             \n" +
+                        "    RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW \n" +
+                        "  ) AS total_product                                \n" +
+                        "FROM " + parsedTable + "                            \n"
+        );
 
         // 打印开窗结果
-        parsedTable.execute().print();
+        windowedTable.execute().print();
 
         // 显式触发任务执行
         env.execute("Kafka Data Consumer Job");

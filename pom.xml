@@ -49,4 +49,9 @@
         <maven-assembly-plugin.version>2.6</maven-assembly-plugin.version>
         <maven-shade-plugin.version>3.1.1</maven-shade-plugin.version>
     </properties>
+    <dependency>
+        <groupId>org.apache.flink</groupId>
+        <artifactId>flink-json</artifactId>
+        <version>${flink.version}</version>
+    </dependency>
 </project>
