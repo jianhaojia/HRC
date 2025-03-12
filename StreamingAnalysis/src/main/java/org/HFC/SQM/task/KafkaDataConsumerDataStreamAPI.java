@@ -1,8 +1,11 @@
 package org.HFC.SQM.task;
 
 import org.HFC.SQM.utils.ConfigLoader;
+import org.HFC.SQM.utils.QQEmailSender;
 import org.apache.flink.api.common.functions.RichMapFunction;
 import org.apache.flink.api.common.serialization.SimpleStringSchema;
+import org.apache.flink.api.common.state.MapState;
+import org.apache.flink.api.common.state.MapStateDescriptor;
 import org.apache.flink.api.common.state.ValueState;
 import org.apache.flink.api.common.state.ValueStateDescriptor;
 import org.apache.flink.api.java.functions.KeySelector;
@@ -18,15 +21,19 @@ import org.apache.flink.util.Collector;
 import org.json.JSONObject;
 
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Properties;
 
 public class KafkaDataConsumerDataStreamAPI {
+    private static ConfigLoader configLoader = new ConfigLoader();
+    private static final List<Integer> ALARM_THRESHOLDS = Arrays.asList(60, 300, 600);
     public static void main(String[] args) throws Exception {
         // 创建流执行环境
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
         // 加载配置
-        ConfigLoader configLoader = new ConfigLoader();
+
         String topic = configLoader.getProperty("kafka.topic");
         String testFlag="True";
         // 设置 Kafka 消费者属性
@@ -34,6 +41,7 @@ public class KafkaDataConsumerDataStreamAPI {
         properties.setProperty("bootstrap.servers", "localhost:9092");
         properties.setProperty("group.id", "test");
         properties.setProperty("auto.offset.reset", "latest");
+
         // 创建 Kafka 消费者
         FlinkKafkaConsumer<String> kafkaConsumer = new FlinkKafkaConsumer<>(topic, new SimpleStringSchema(), properties);
 
@@ -56,6 +64,8 @@ public class KafkaDataConsumerDataStreamAPI {
             // 定义一个 ValueState 用于存储每个 key 的上次处理时间
             private transient ValueState<Long> lastProcessTimeState;
 
+            private transient MapState<Integer, Boolean> alarmTriggeredMapState;
+
             @Override
             public void open(Configuration parameters) throws Exception {
                 // 初始化状态
@@ -70,6 +80,11 @@ public class KafkaDataConsumerDataStreamAPI {
                         Types.DOUBLE // 状态类型
                 );
                 downTimeState = getRuntimeContext().getState(downTimeDescriptor);
+
+                MapStateDescriptor<Integer, Boolean> alarmMapDescriptor = new MapStateDescriptor<>(
+                        "alarmTriggers", Types.INT, Types.BOOLEAN
+                );
+                alarmTriggeredMapState = getRuntimeContext().getMapState(alarmMapDescriptor);
 
                 ValueStateDescriptor<Long> lastProcessTimeDescriptor = new ValueStateDescriptor<>(
                         "lastProcessTime", // 状态名称
@@ -124,6 +139,21 @@ public class KafkaDataConsumerDataStreamAPI {
                 jsonObject.put("total_output", totalOutput);
                 // 添加 down_time 字段到 JSON 对象
                 jsonObject.put("down_time", downTime);
+                for (Integer threshold : ALARM_THRESHOLDS) {
+                    Boolean hasTriggered = alarmTriggeredMapState.get(threshold);
+                    if (downTime >= threshold && (hasTriggered == null || !hasTriggered)) {
+                        // 构建报警信息（可添加阈值参数）
+                        JSONObject alarmInfo = new JSONObject();
+                        alarmInfo.put("id", jsonObject.getInt("id"));
+                        alarmInfo.put("down_time", downTime);
+                        alarmInfo.put("threshold", threshold);
+
+                        QQEmailSender.errorNoteEmail(testFlag, alarmInfo.toString());
+
+                        // 标记该阈值已触发
+                        alarmTriggeredMapState.put(threshold, true);
+                    }
+                }
 
                 // 输出处理后的 JSON 字符串
                 collector.collect(jsonObject.toString());

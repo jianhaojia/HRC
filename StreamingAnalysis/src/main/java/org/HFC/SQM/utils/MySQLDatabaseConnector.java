@@ -32,7 +32,7 @@ public class MySQLDatabaseConnector {
      * @return 包含厂区名称、车间名称和线名称的数组，如果查询失败返回 null
      */
     public String[] queryFactoryInfoById(int id) {
-        String sql = "SELECT factory_name, workshop_name, line_name FROM machine WHERE id = ?";
+        String sql = "SELECT factory_name, workshop_name, line_name,notice_list,cc_list FROM machine WHERE machine_id = ?";
         try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             preparedStatement.setInt(1, id);
             try (ResultSet resultSet = preparedStatement.executeQuery()) {
@@ -40,7 +40,9 @@ public class MySQLDatabaseConnector {
                     String factoryName = resultSet.getString("factory_name");
                     String workshopName = resultSet.getString("workshop_name");
                     String lineName = resultSet.getString("line_name");
-                    return new String[]{factoryName, workshopName, lineName};
+                    String notice_list = resultSet.getString("notice_list");
+                    String cc_list = resultSet.getString("cc_list");
+                    return new String[]{factoryName, workshopName, lineName,notice_list,cc_list};
                 }
             }
         } catch (SQLException e) {
