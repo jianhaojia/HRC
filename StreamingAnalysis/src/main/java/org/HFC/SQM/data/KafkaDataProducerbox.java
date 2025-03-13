@@ -3,16 +3,17 @@ package org.HFC.SQM.data;
 import org.HFC.SQM.utils.ConfigLoader;
 import org.apache.commons.lang3.ThreadUtils;
 import org.apache.kafka.clients.producer.*;
+
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.Properties;
-import org.apache.commons.lang3.ThreadUtils;
-public class KafkaDataProducerPackager {
+
+public class KafkaDataProducerbox {
     public static void main(String[] args) {
         ConfigLoader configLoader = new ConfigLoader();
-        String topic = configLoader.getProperty("kafka.packager.topic");
+        String topic = configLoader.getProperty("kafka.box.topic");
         // 配置 Kafka 生产者属性
         Properties props = new Properties();
         props.put("bootstrap.servers", "localhost:9092"); // Kafka 服务器地址
@@ -24,7 +25,7 @@ public class KafkaDataProducerPackager {
         // 定义 Kafka 主题
 
         // 读取文件路径
-        String filePath = "F:/AI/backup/HRC/machine_data.txt";
+        String filePath = "F:/AI/backup/HRC/box_data.txt";
 
 
         try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {

@@ -2,21 +2,21 @@ package org.HFC.SQM.task;
 
 import org.HFC.SQM.utils.ConfigLoader;
 import org.HFC.SQM.utils.QQEmailSender;
-import org.apache.flink.api.common.functions.RichMapFunction;
 import org.apache.flink.api.common.serialization.SimpleStringSchema;
 import org.apache.flink.api.common.state.MapState;
 import org.apache.flink.api.common.state.MapStateDescriptor;
 import org.apache.flink.api.common.state.ValueState;
 import org.apache.flink.api.common.state.ValueStateDescriptor;
+import org.apache.flink.api.common.typeinfo.Types;
 import org.apache.flink.api.java.functions.KeySelector;
 import org.apache.flink.configuration.Configuration;
+import org.apache.flink.connector.base.DeliveryGuarantee;
+import org.apache.flink.connector.kafka.sink.KafkaRecordSerializationSchema;
+import org.apache.flink.connector.kafka.sink.KafkaSink;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction;
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer;
-import org.apache.flink.api.common.typeinfo.Types;
-import org.apache.flink.api.java.tuple.Tuple5;
-import org.apache.flink.streaming.api.functions.ProcessFunction;
 import org.apache.flink.util.Collector;
 import org.json.JSONObject;
 
@@ -25,7 +25,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 
-public class KafkaDataConsumerDataStreamAPI {
+public class KafkaDataConsumerbox {
     private static ConfigLoader configLoader = new ConfigLoader();
     private static final List<Integer> ALARM_THRESHOLDS = Arrays.asList(60, 300, 600);
     public static void main(String[] args) throws Exception {
@@ -34,7 +34,7 @@ public class KafkaDataConsumerDataStreamAPI {
 
         // 加载配置
 
-        String topic = configLoader.getProperty("kafka.topic");
+        String topic = configLoader.getProperty("kafka.box.topic");
         String testFlag="True";
         // 设置 Kafka 消费者属性
         Properties properties = new Properties();
@@ -159,8 +159,22 @@ public class KafkaDataConsumerDataStreamAPI {
                 collector.collect(jsonObject.toString());
             }
         });
+        Properties producerProperties = new Properties();
+        producerProperties.setProperty("bootstrap.servers", "localhost:9092");
+        producerProperties.setProperty("transaction.timeout.ms", "60000");
 
-        kafkaStream.print();
+        KafkaSink<String> kafkaSink = KafkaSink.<String>builder()
+                .setBootstrapServers("localhost:9092")
+                .setRecordSerializer(KafkaRecordSerializationSchema.builder()
+                        .setTopic("box-merge")  // 替换为你的输出topic
+                        .setValueSerializationSchema(new SimpleStringSchema())
+                        .build()
+                )
+                .setDeliveryGuarantee(DeliveryGuarantee.AT_LEAST_ONCE)
+                .setKafkaProducerConfig(producerProperties)
+                .build();
+        kafkaStream.sinkTo(kafkaSink);
+//        kafkaStream.print();
 
 // ... existing code ...
 
