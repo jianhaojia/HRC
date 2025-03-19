@@ -2,44 +2,35 @@ package org.HFC.SQM.task;
 
 import org.HFC.SQM.utils.ConfigLoader;
 import org.HFC.SQM.utils.QQEmailSender;
+import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.common.serialization.SimpleStringSchema;
-import org.apache.flink.api.common.state.MapState;
-import org.apache.flink.api.common.state.MapStateDescriptor;
-import org.apache.flink.api.common.state.ValueState;
-import org.apache.flink.api.common.state.ValueStateDescriptor;
-import org.apache.flink.api.common.typeinfo.Types;
+import org.apache.flink.api.common.state.*;
 import org.apache.flink.api.java.functions.KeySelector;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.connector.base.DeliveryGuarantee;
+import org.apache.flink.connector.jdbc.JdbcConnectionOptions;
+import org.apache.flink.connector.jdbc.JdbcExecutionOptions;
+import org.apache.flink.connector.jdbc.JdbcSink;
 import org.apache.flink.connector.kafka.sink.KafkaRecordSerializationSchema;
 import org.apache.flink.connector.kafka.sink.KafkaSink;
+import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction;
-import org.apache.flink.streaming.api.functions.sink.SinkFunction;
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer;
+import org.apache.flink.api.common.typeinfo.Types;
+import org.apache.flink.types.Row;
 import org.apache.flink.util.Collector;
 import org.json.JSONObject;
 
+import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Properties;
-import org.apache.flink.streaming.api.datastream.DataStream;
-import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.apache.flink.api.common.functions.MapFunction;
-import org.apache.flink.api.common.typeinfo.TypeInformation;
-import org.apache.flink.api.java.typeutils.RowTypeInfo;
-import org.apache.flink.connector.jdbc.JdbcSink;
-import org.apache.flink.connector.jdbc.JdbcExecutionOptions;
-import org.apache.flink.connector.jdbc.JdbcConnectionOptions;
-import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.flink.types.Row;
-
-import java.sql.Timestamp;
 import java.util.Map;
+import java.util.Properties;
 
-public class KafkaDataConsumerbox {
+public class KafkaDataConsumerPackage {
     private static ConfigLoader configLoader = new ConfigLoader();
     private static final List<Integer> ALARM_THRESHOLDS = Arrays.asList(60, 300, 600);
     public static void main(String[] args) throws Exception {
@@ -48,7 +39,7 @@ public class KafkaDataConsumerbox {
 
         // 加载配置
 
-        String topic = configLoader.getProperty("kafka.box.topic");
+        String topic = configLoader.getProperty("kafka.packager.topic");
         String url = configLoader.getProperty("clikhouse.url");
         String user = configLoader.getProperty("clikhouse.user");
         String password = configLoader.getProperty("clikhouse.password");
@@ -183,15 +174,15 @@ public class KafkaDataConsumerbox {
         KafkaSink<String> kafkaSink = KafkaSink.<String>builder()
                 .setBootstrapServers("localhost:9092")
                 .setRecordSerializer(KafkaRecordSerializationSchema.builder()
-                        .setTopic("box-merge")  // 替换为你的输出topic
+                        .setTopic("package-merge")  // 替换为你的输出topic
                         .setValueSerializationSchema(new SimpleStringSchema())
                         .build()
                 )
                 .setDeliveryGuarantee(DeliveryGuarantee.AT_LEAST_ONCE)
                 .setKafkaProducerConfig(producerProperties)
                 .build();
- kafkaStream.sinkTo(kafkaSink);
-
+        kafkaStream.sinkTo(kafkaSink);
+//        kafkaStream.print();
         DataStream<Row> parsedStream = kafkaStream.map(new MapFunction<String, Row>() {
             private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -234,9 +225,6 @@ public class KafkaDataConsumerbox {
                         .withPassword(password)
                         .build()
         );
-
-        parsedStream.addSink((SinkFunction<Row>) clickHouseSink);
-//kafkaStream.print();
 
 // ... existing code ...
 
