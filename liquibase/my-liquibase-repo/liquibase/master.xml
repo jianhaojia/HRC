@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <!--
+        Liquibase Master Entry File
+        ==========================================================================
+
+        [Static Configuration]
+        This is a static file that is not dynamically modified.
+        Different scenarios use different commands to execute.
+
+        [Included Content]
+        - baseline/          Baseline version
+        - */normal/         Normal changesets
+
+        [Excluded Content]
+        - */rollback/       Rollback changesets (executed independently)
+        - */archived/       Historical archives (not deployed)
+
+        [Scenario Commands]
+        - INIT:      mvn liquibase:update -DchangeLogFile=...baseline/v1.0.0_baseline.sql
+        - RELEASE:   mvn liquibase:update -DchangeLogFile=liquibase/master.xml
+        - ROLLBACK:  mvn liquibase:update -DchangeLogFile=liquibase/changelogs/mapper/rollback/xxx--rollback.sql
+        - REBASELINE: mvn liquibase:drop-all && mvn liquibase:update -DchangeLogFile=...baseline/v1.1.0_baseline.sql
+
+        ==========================================================================
+    -->
+
+    <!-- ==================== Baseline Version ==================== -->
+    <include file="changelogs/baseline/v1.0.0_baseline.sql"/>
+
+    <!-- ==================== Normal Changesets ==================== -->
+    <!-- Executed during CI/CD RELEASE -->
+    <include dir="changelogs/master/normal/"/>
+    <include dir="changelogs/mapper/normal/"/>
+    <include dir="changelogs/config/normal/"/>
+
+    <!--
+        ==================== Rollback Changesets ====================
+        NOT in master.xml
+        Executed independently: mvn liquibase:update -DchangeLogFile=changelogs/mapper/rollback/xxx--rollback.sql
+
+        ==================== Archived ====================
+        NOT in master.xml
+        Not deployed, historical records only
+    -->
+
+</databaseChangeLog>

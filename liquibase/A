@@ -1,0 +1,17 @@
+你是一个架构师，需要协助我设计一个基于liquibase的CICD的流程，用于mysql里面的维护。
+
+##背景
+公司采用来数据库驱动ETL的模式来管理代码，意思是所有的ETL的流程和ETL逻辑都会直接存储在mysql，通过跑spark，读取mysql里面对应的value，组成ETL的过程来实现数据的ETL，以及schedule。一句话就是所有的逻辑都有对应的表记录记录。
+
+##mysql表类型
+这里是对已经存在的业务表的分类和解析：我们的数据库已经存在了三类表：
+1：流程定义表，表名是aaa_pre_pro_master，每一条记录都代表着一个entity，其中有field是configurationid就是调用entity的唯一ID。每一条记录会定义好，从哪里load数据，save到哪里，用什么ETLmapper version，以及一些参数配置。其中ETLmapper version，就是实际的ETL的运行逻辑记录的地方，更新新增频繁，更新的sql语句中等。
+2：ETLmapper表，表名是s2t_mapping,每一条记录都代表着一个操作，其中有字段mapName和mapversion，aaa_pre_pro_master的ETLmapper version=s2t_mapping 的concat(mapName,mapversion)意味着，流程会调用这个操作。其中有字段 maptype会定义操作是什么，如SQL-FILE：代表还需要加载哪些hdfs的file，他的viewname是什么。会在field mapdetail里面详细写明操作格式是A->HDFSpath,底层我们有源码给他解析成类似 A=spark.read.parquet(HDFSpath) ,A.create_or_replace_temp_view("a"),如SQL-SUQUERY:代表走什么sql，他的结果的viewname是什么。会在field mapdetail里面详细写明操作格式是B->select * from A where id=1,底层我们有源码给他解析成类似 B=spark.sql("select * from A where id=1") ,B.create_or_replace_temp_view("B")。所以每一组mapName和mapversion，都有多个操作，当ETLmapper version=s2t_mapping 的concat(mapName,mapversion)，表明流程需要用这套逻辑，多个流程可以共用一套逻辑，更新频繁，更新的sql语句长。
+3：配置表：表名是setting_day,每一条记录意味着一个配置，入会有schedule里面定义是哪个国家的假期表。当流程定义表里面有参数说用CN的假期表，就会join到这边来读取相应的假期具体。更新一般，更新的sql语句短。
+
+##背景限制以及政策限制
+1：部署流程走CICD，从UAT->PRD，其中UAT的时候需要把代码测试好，锁在branch里面，然后review完，下周规定时间才可以用锁好的branch上PRD，上PRD的时候只能用UAT已经测试好的代码，如果上生成遇到问题，需要设置rollback的方式。不允许手工修改。
+2：CICD在build的阶段有强制机制上扫描整个你需要的branch，如果你文件内容过多，会导致build时间过长。允许把不需要的文件放入*ARCHIVE*的文件名里面，逻辑会在build的时候忽略扫描，但deploy的时候回先删掉这个文件夹里面的内容，意味着在环境里面你不能用这些文件，也不会出现在目录结构里面。需要考虑changset过多，怎么管理的问题
+3：我们上多团队合作，用同一个代码仓库，仓库里面会放我们用来维护表的语句，不考虑query上的冲突，会在UAT大家做测试的时候就能遇到。
+4：仓库里面上需要用liquibase，CICD的时候用maven来打包jar，上去执行，具体的更改是用.sql来做修改。
+5：要求是向前rollback，需要有baseline，用liquibase的原因上后续可以通过liquibase的log来协助部署。
