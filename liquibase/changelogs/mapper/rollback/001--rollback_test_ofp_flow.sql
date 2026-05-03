@@ -1,0 +1,34 @@
+-- liquibase formatted sql
+-- ============================================================================
+-- Rollback Changeset for test_ofp_flow
+-- ============================================================================
+--
+-- [Usage]
+--   mvn liquibase:update \
+--     -DchangeLogFile=liquibase/changelogs/mapper/rollback/001--rollback_test_ofp_flow.sql \
+--     -Dliquibase.url=jdbc:mysql://${DB_HOST}:3306/${DB_NAME} \
+--     -Dliquibase.username=liquibase \
+--     -Dliquibase.password=${DB_PASSWORD}
+--
+-- [Trigger]
+--   GitHub Actions workflow_dispatch (deploy_type = rollback)
+--   Required input: rollback_file = "001--rollback_test_ofp_flow.sql"
+--
+-- [Rollback Strategy]
+--   - ROLLBACK files are NOT in master.xml
+--   - Executed independently via specific changeLogFile parameter
+--   - DATABASECHANGELOG tracks executed changesets - already executed rollbacks are skipped
+--
+-- [Changeset ID Convention]
+--   Original: ofp:baseline:001
+--   Rollback: ofp:baseline:001:rb
+--   (suffix :rb indicates rollback changeset)
+--
+-- ============================================================================
+
+-- changeset ofp:baseline:001:rb author:infra context:uat,prd
+-- comment: Rollback test_ofp_flow table creation (baseline)
+-- rollback: Recreate table if needed (Liquibase auto-records)
+
+-- Drop the test_ofp_flow table
+DROP TABLE IF EXISTS test_ofp_flow;
